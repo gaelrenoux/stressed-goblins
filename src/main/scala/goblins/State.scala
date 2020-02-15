@@ -16,13 +16,20 @@ class State(
 
   def iteration: Long = _iteration
 
+  def reinforce(rec: Int = 1): State = if (rec > 0) {
+    for {
+      place <- Place.All
+      goblinPresents = occupations(place.key)
+      gob <- goblinPresents
+      otherGob <- Random.pick(goblinPresents, 5)
+    } {
+      gob.meet(otherGob, place)
+    }
+    reinforce(rec - 1)
+  } else this
+
   def advance(): Unit = {
     _iteration = _iteration + 1
-    occupations.foreach(_.clear())
-    goblins.foreach { g =>
-      g.timePasses()
-      occupations(g.preferredPlace()).add(g)
-    }
 
     for {
       place <- Place.All
@@ -37,6 +44,13 @@ class State(
       case (goblins, place) if place.servesFood => goblins.foreach(_.eat())
       case _ => ()
     }
+
+    occupations.foreach(_.clear())
+    goblins.foreach { g =>
+      g.timePasses()
+      occupations(g.preferredPlace()).add(g)
+    }
+
   }
 
   private val headers = Place.All.map(p => f"${p.name}%-9s").mkString(" | ")
@@ -70,5 +84,16 @@ object State {
       color <- Color.All
     } yield Goblin(name, color)
     new State(goblins, Array.fill(Place.Count)(mutable.Set[Goblin]()))
+  }
+
+  def monoPlace(red: Place, blue: Place, green: Place)(implicit matrix: GoblinRelationsMatrix = GoblinRelationsMatrix.Default): State = {
+    val redGoblins = (Goblin.Names ++ Goblin.Names).map(Goblin(_, Red))
+    val blueGoblins = (Goblin.Names ++ Goblin.Names).map(Goblin(_, Blue))
+    val greenGoblins = (Goblin.Names ++ Goblin.Names).map(Goblin(_, Green))
+    val positions = Array.fill(Place.Count)(mutable.Set[Goblin]())
+    positions(red.key).addAll(redGoblins)
+    positions(blue.key).addAll(redGoblins)
+    positions(green.key).addAll(greenGoblins)
+    new State(redGoblins ++ blueGoblins ++ greenGoblins, positions)
   }
 }
