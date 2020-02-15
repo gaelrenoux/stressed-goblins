@@ -23,11 +23,11 @@ object GoblinRelationsMatrix {
     (Red, Red) -> 2,
     (Red, Blue) -> 0,
     (Red, Green) -> -10,
-    (Blue, Red) -> 2,
-    (Blue, Blue) -> 0,
+    (Blue, Red) -> 0,
+    (Blue, Blue) -> 2,
     (Blue, Green) -> -10,
-    (Green, Red) -> 0,
-    (Green, Blue) -> 0,
+    (Green, Red) -> -2,
+    (Green, Blue) -> -2,
     (Green, Green) -> 2,
   )
 }

@@ -6,9 +6,10 @@ final case class Goblin(
     name: String,
     color: Color
 ) {
+
   import Ordering.Double.IeeeOrdering
 
-  var happiness: Int = 0
+  var happiness: Double = 0
   var satiety: Int = 0
 
   /** Tells if a place has good memories or not. Higher score means better memories. */
@@ -19,12 +20,9 @@ final case class Goblin(
   @inline def addMemory(place: Place, happiness: Int): Unit = memories(place.key) += happiness
 
   @inline def timePasses() = {
-    fadeMemories()
-    satiety -= 10
-  }
-
-  @inline def fadeMemories(): Unit = {
     val _ = memories.mapInPlace(_ * 0.9)
+    happiness = happiness * 0.9
+    satiety -= 10
   }
 
   @inline def meet(that: Goblin, place: Place)(implicit matrix: GoblinRelationsMatrix): Unit = {
@@ -38,19 +36,19 @@ final case class Goblin(
     if (satiety <= 0) satiety = 0
   }
 
-  def preferredPlace() =
-    if (satiety <= -100) Place.WithFood.maxBy(p => memories(p.key))
+  def preferredPlace(): Int =
+    if (satiety <= -100) Place.WithFood.maxBy(p => memories(p.key)).key
     else {
-      val goodPlaces = memories.view.map(_ + 1).zipWithIndex.filter(_._1 > 0).toSet
+      val minimum = math.min(memories.max - 1, -1)
+      val goodPlaces = memories.view.map(_ - minimum).zipWithIndex.filter(_._1 >= 0).toSet
       val total = goodPlaces.view.map(_._1).sum
       var pick = total * Random.nextDouble()
-      val picked = goodPlaces.find {
+      goodPlaces.find {
         case (score, _) => if (score > pick) true else {
           pick -= score
           false
         }
-      }.fold(0)(_._2)
-      Place.All(picked)
+      }.get._2
     }
 
 }

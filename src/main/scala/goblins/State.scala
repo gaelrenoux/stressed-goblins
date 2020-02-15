@@ -1,7 +1,8 @@
 package goblins
 
 import goblins.Color._
-import goblins.utils.RandomImplicits._
+import goblins.utils.CollectionMath.ops._
+import goblins.utils.RandomUtil.ops._
 
 import scala.collection.mutable
 import scala.util.Random
@@ -12,14 +13,15 @@ class State(
 )(implicit val matrix: GoblinRelationsMatrix = GoblinRelationsMatrix.Default) {
 
   private var _iteration: Long = 0
+
   def iteration: Long = _iteration
 
   def advance(): Unit = {
     _iteration = _iteration + 1
     occupations.foreach(_.clear())
     goblins.foreach { g =>
-      g.fadeMemories()
-      occupations(g.preferredPlace().key).add(g)
+      g.timePasses()
+      occupations(g.preferredPlace()).add(g)
     }
 
     for {
@@ -41,15 +43,22 @@ class State(
 
   def render(): String = {
     val state = f"State ${_iteration}%-5d"
-    val redLine = occupations.view.map(_.count(_.color == Red)).map(c => f"Red:  $c%3d").mkString(" | ")
-    val blueLine = occupations.view.map(_.count(_.color == Blue)).map(c => f"Blue: $c%3d").mkString(" | ")
-    val greenLine = occupations.view.map(_.count(_.color == Green)).map(c => f"Green:$c%3d").mkString(" | ")
+    val redLine = occupations.view.map(_.count(Red)).map(c => f"Red:  $c%3d").mkString(" | ")
+    val blueLine = occupations.view.map(_.count(Blue)).map(c => f"Blue: $c%3d").mkString(" | ")
+    val greenLine = occupations.view.map(_.count(Green)).map(c => f"Green:$c%3d").mkString(" | ")
+    val redHappiness = goblins.filter(Red).map(_.happiness)
+    val blueHappiness = goblins.filter(Blue).map(_.happiness)
+    val greenHappiness = goblins.filter(Green).map(_.happiness)
+
+    def m(happiness: Array[Double]) = f"${happiness.mean}%3f1 / ${happiness.median}%3f1"
+
     s""" ---------- $state --------------------
-       |$headers
-       |$redLine
-       |$blueLine
-       |$greenLine
-       |""".stripMargin
+        |$headers
+        |$redLine
+        |$blueLine
+        |$greenLine
+        |Mean/median happiness:  Red (${m(redHappiness)})  Blue (${m(blueHappiness)})  Green (${m(greenHappiness)})
+        |""".stripMargin
   }
 
 }
